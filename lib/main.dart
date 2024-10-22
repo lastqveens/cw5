@@ -31,9 +31,16 @@ class _AquariumScreenState extends State<AquariumScreen>
   late AnimationController _controller;
   List<Fish> fishList = [];
   double selectedSpeed = 2.0;
-  Color selectedColor = Colors.blue;
+  Color selectedColor = Colors.red; // Default color from availableColors
   final Random random = Random();
   late Size aquariumSize;
+  final List<Color> availableColors = [
+    Colors.red,
+    Colors.green,
+    Colors.blue,
+    Colors.yellow,
+    Colors.purple,
+  ];
 
   @override
   void initState() {
@@ -59,7 +66,11 @@ class _AquariumScreenState extends State<AquariumScreen>
     final savedSettings = await DatabaseHelper.instance.getSettings();
     setState(() {
       selectedSpeed = savedSettings['speed'] ?? 2.0;
-      selectedColor = Color(savedSettings['color'] ?? Colors.blue.value);
+      int savedColorValue = savedSettings['color'] ?? Colors.red.value;
+      selectedColor = availableColors.firstWhere(
+        (color) => color.value == savedColorValue,
+        orElse: () => Colors.red, // Default if no match is found
+      );
       int fishCount = savedSettings['fishCount'] ?? 5;
       for (int i = 0; i < fishCount; i++) {
         _addFish();
@@ -129,6 +140,7 @@ class _AquariumScreenState extends State<AquariumScreen>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Speed Slider
                       Slider(
                         value: selectedSpeed,
                         min: 0.5,
@@ -143,10 +155,34 @@ class _AquariumScreenState extends State<AquariumScreen>
                         },
                         label: "Speed: ${selectedSpeed.toStringAsFixed(2)}",
                       ),
+                      
+                      // Color Dropdown
+                      DropdownButton<Color>(
+                        value: selectedColor,
+                        onChanged: (Color? newColor) {
+                          setState(() {
+                            selectedColor = newColor!;
+                          });
+                        },
+                        items: availableColors.map((Color color) {
+                          return DropdownMenuItem<Color>(
+                            value: color,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              color: color,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      
+                      // Add Fish Button
                       ElevatedButton(
                         onPressed: _addFish,
                         child: const Text('Add Fish'),
                       ),
+                      
+                      // Save Settings Button
                       ElevatedButton(
                         onPressed: _saveSettings,
                         child: const Text('Save Settings'),
